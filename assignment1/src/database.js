@@ -182,4 +182,7 @@ const dbOperations = {
 
 };
 
-module.exports = dbOperations;
+module.exports = {
+  db, // export the database instance
+  ...dbOperations, // spreads all operations as individual exports
+};

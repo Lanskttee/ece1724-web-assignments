@@ -17,7 +17,7 @@ const validatePaper = (paper) => {
   //
   // Error message format should match the handout, for example:
   // - "Title is required"
-  // - "Author is required"
+  // - "Authors are required"
   // - "Published venue is required"
   // - "Published year is required"
   // - "Valid year after 1900 is required"

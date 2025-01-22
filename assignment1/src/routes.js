@@ -21,7 +21,7 @@ router.get("/papers", async (req, res, next) => {
       return res.status(400).json({ error: "Validation Error", message: "Limit should be a positive integer not exceeding 100" });
     }
 
-    const papers = await db.getPapers(filters);
+    const papers = await db.getAllPapers(filters);
     res.status(200).json(papers);
 
   } catch (error) {
@@ -79,7 +79,8 @@ router.put("/papers/:id", async (req, res, next) => {
     }
 
     // Your implementation here
-    const updatedPaper = await db.updatePaper(id, req.body);
+    const updatedPaper = await db.updatePaper(req.params.id, req.body);
+    // const updatedPaper = await db.updatePaper(id, req.body);
     if (!updatedPaper) {
       return res.status(404).json({ error: "Paper not found" });
     }

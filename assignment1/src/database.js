@@ -40,6 +40,7 @@ const dbOperations = {
     //       }
     //     );
     //   });
+    //... 是扩展运算符（spread syntax），可以将对象或数组的内容展开。
     //   return { id: result, ...paper };
     // } catch (error) {
     //   throw error;
@@ -55,7 +56,7 @@ const dbOperations = {
     try {
       //SQLite 的 db.run 方法是基于回调函数的，它不会返回 Promise，也不支持 await。
       //我们需要将 db.run 包装成 Promise，以便可以在 async 函数中用 await 处理。
-      const result = await new Promise((resolve, reject) => {
+      const paperId = await new Promise((resolve, reject) => {
         db.run(
           `INSERT INTO papers (title, authors, published_in, year) VALUES (?, ?, ?, ?)`,
           [title, authors, published_in, year],
@@ -65,8 +66,20 @@ const dbOperations = {
           }
         );
       });
-      //... 是扩展运算符（spread syntax），可以将对象或数组的内容展开。
-      return { id: result, ...paper };
+      // 查询新插入的记录，包括 created_at 和 updated_at 字段
+      const result = await new Promise((resolve, reject) => {
+        db.get(
+          `SELECT * FROM papers WHERE id = ?`,
+          [paperId],
+          (err, row) => {
+            if (err) reject(err);
+            else resolve(row); 
+          }
+        );
+      });
+
+      return result; 
+ 
     } catch (error) {
       throw error;
     }
@@ -150,17 +163,32 @@ const dbOperations = {
     // Your implementation here
     const { title, authors, published_in, year } = paper;
     try {
-      await new Promise((resolve, reject) => {
+      const changes = await new Promise((resolve, reject) => {
         db.run(
           `UPDATE papers 
           SET title = ?, authors = ?, published_in = ?, year = ?, updated_at = CURRENT_TIMESTAMP
           WHERE id = ?`,
-          [title, authors, published_in, year, id], (err) => {
+          [title, authors, published_in, year, id], function (err) {
             if (err) reject(err);
-            else resolve(this.changes);  
+            else resolve(this.changes); 
           }
         );
       });
+
+      if (changes === 0) return null;
+
+      const updatedPaper = await new Promise((resolve, reject) => {
+        db.get(
+          `SELECT * FROM papers WHERE id = ?`,
+          [id],
+          (err, row) => {
+            if (err) reject(err);
+            else resolve(row);
+          }
+        );
+      });
+
+    return updatedPaper;
     } catch (error) {
       throw error;
     }
@@ -169,12 +197,15 @@ const dbOperations = {
   deletePaper: async (id) => {
     // Your implementation here
     try {
-      await new Promise((resolve, reject) => {
-        db.run("DELETE FROM papers WHERE id = ?", [id], (err) => {
+      const result = await new Promise((resolve, reject) => {
+        db.run("DELETE FROM papers WHERE id = ?", [id], function(err) {
           if (err) reject(err);
-          else resolve(this.changes);
-        });
+          else resolve(this.changes);  
+        }
+        );
       });
+
+      return result > 0 ? result : null;
     } catch (error) {
       throw error;
     }

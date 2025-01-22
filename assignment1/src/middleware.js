@@ -32,9 +32,10 @@ const validatePaper = (paper) => {
   const year = paper.year;
 
   if (!title) errors.push("Title is required");
-  if (!authors) errors.push("Authors is required");
+  if (!authors) errors.push("Authors are required");
   if (!publishedIn) errors.push("Published venue is required");
-  if (!year || !Number.isInteger(year) || year <= 1900) {
+  if (!year) errors.push("Published year is required")
+  else if (!Number.isInteger(year) || year <= 1900) {
     errors.push("Valid year after 1900 is required");
   }
 

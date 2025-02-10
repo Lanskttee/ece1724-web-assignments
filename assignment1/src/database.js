@@ -120,7 +120,7 @@ const dbOperations = {
           params.push(filters.year);
         }
         if (filters.published_in) {
-          conditions.push("published_in LIKE ?");
+          conditions.push("LOWER(published_in) LIKE LOWER(?)");
           params.push(`%${filters.published_in}%`);
         }
         query += " WHERE " + conditions.join(" AND ");
@@ -128,6 +128,10 @@ const dbOperations = {
       //举例
       //conditions  ["year = ?", "published_in LIKE ?"]。
       //params  [2020, "%Science%"]。
+
+      query += " LIMIT ? OFFSET ?";
+      params.push(filters.limit || 10);
+      params.push(filters.offset || 0);
 
       const result = await new Promise((resolve, reject) => {
         db.all(query, params, (err, rows) => {

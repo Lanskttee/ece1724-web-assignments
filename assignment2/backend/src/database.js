@@ -17,10 +17,15 @@ const dbOperations = {
       //   - email: string (optional)
       //   - affiliation: string (optional)
       //
-      // Use await prisma.paper.create()
-      // Use connectOrCreate to handle authors (check Prisma docs:
-      // https://www.prisma.io/docs/orm/prisma-client/queries/relation-queries#connect-or-create-a-record)
-      // Make sure to include authors in the response
+      // Steps:
+      // 1. For each author in paperData.authors:
+      //    - First try to find an existing author with matching name, email, and affiliation
+      //    - If not found, create a new author
+      // 2. Create the paper and connect it with the authors
+      // 3. Make sure to include authors in the response
+      //
+      // Hint: Use prisma.author.findFirst() to find existing authors
+      // and prisma.paper.create() with { connect: [...] } to connect authors
     } catch (error) {
       throw error;
     }
@@ -61,9 +66,27 @@ const dbOperations = {
     try {
       // TODO: Implement paper update
       //
-      // Update paper fields and author relationships
-      // Use await prisma.paper.update()
-      // Return updated paper with authors
+      // paperData includes:
+      // - title: string
+      // - publishedIn: string
+      // - year: number
+      // - authors: array of author objects
+      //   each author has:
+      //   - name: string
+      //   - email: string (optional)
+      //   - affiliation: string (optional)
+      //
+      // Steps:
+      // 1. For each author in paperData.authors:
+      //    - First try to find an existing author with matching name, email, and affiliation
+      //    - If not found, create a new author
+      // 2. Update the paper with new field values
+      // 3. Replace all author relationships with the new set of authors
+      // 4. Make sure to include authors in the response
+      //
+      // Hint: Use prisma.author.findFirst() to find existing authors
+      // and prisma.paper.update() with authors: { set: [], connect: [...] }
+      // to replace author relationships
     } catch (error) {
       throw error;
     }

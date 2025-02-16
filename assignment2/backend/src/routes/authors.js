@@ -16,9 +16,20 @@ router.get(
       //    - affiliation (optional)
       //    - limit (optional, default: 10)
       //    - offset (optional, default: 0)
+      const { name, affiliation, limit, offset } = req.query;
+      const filters = {};
+      if (name !== undefined) {
+        filters.name = name;
+      }
+      if (affiliation !== undefined) {
+        filters.affiliation = affiliation;
+      }
+      filters.limit = limit !== undefined ? Number(limit) : 10;
+      filters.offset = offset !== undefined ? Number(offset) : 0;
       //
       // 2. Call db.getAllAuthors with filters
       //
+      const result = await db.getAllAuthors(filters);
       // 3. Send JSON response with status 200:
       //    res.json({
       //      authors,  // Array of authors with their papers
@@ -26,6 +37,12 @@ router.get(
       //      limit,    // Current page size
       //      offset    // Current page offset
       //    });
+      res.status(200).json({
+        authors: result.authors,
+        total: result.total,
+        limit: result.limit,
+        offset: result.offset,
+      });
     } catch (error) {
       next(error);
     }
@@ -39,12 +56,18 @@ router.get("/:id", middleware.validateResourceId, async (req, res, next) => {
     //
     // 1. Get author ID from req.params
     //
+    const id = req.params.id;
     // 2. Call db.getAuthorById
     //
+    const author = await db.getAuthorById(id);
     // 3. If author not found, return 404
     //
+    if (!author) {
+      return res.status(404).json({ error: "Author not found" });
+    }
     // 4. Send JSON response with status 200:
     //    res.json(author);
+    res.status(200).json(author);
   } catch (error) {
     next(error);
   }
@@ -57,12 +80,21 @@ router.post("/", async (req, res, next) => {
     //
     // 1. Validate request body using middleware.validateAuthorInput
     //
+    const errors = middleware.validateAuthorInput(req.body);
     // 2. If validation fails, return 400 with error messages
     //
+    if (errors.length > 0) {
+      return res.status(400).json({
+        error: "Validation Error",
+        messages: errors,
+      });
+    }
     // 3. Call db.createAuthor
     //
+    const author = await db.createAuthor(req.body);
     // 4. Send JSON response with status 201:
     //    res.status(201).json(author);
+    res.status(201).json(author);
   } catch (error) {
     next(error);
   }
@@ -75,16 +107,30 @@ router.put("/:id", middleware.validateResourceId, async (req, res, next) => {
     //
     // 1. Get author ID from req.params
     //
+    const id = req.params.id;
     // 2. Validate request body using middleware.validateAuthorInput
     //
+    const errors = middleware.validateAuthorInput(req.body);
     // 3. If validation fails, return 400 with error messages
     //
+    if (errors.length > 0) {
+      return res.status(400).json({
+        error: "Validation Error",
+        messages: errors,
+      });
+    }
     // 4. Call db.updateAuthor
     //
+    const existingAuthor = await db.getAuthorById(id);
     // 5. If author not found, return 404
     //
+    if (!existingAuthor) {
+      return res.status(404).json({ error: "Author not found" });
+    }
     // 6. Send JSON response with status 200:
     //    res.json(author);
+    const author = await db.updateAuthor(id, req.body);
+    res.status(200).json(author);
   } catch (error) {
     next(error);
   }
@@ -97,18 +143,33 @@ router.delete("/:id", middleware.validateResourceId, async (req, res, next) => {
     //
     // 1. Get author ID from req.params
     //
+    const id = req.params.id;
     // 2. Call db.deleteAuthor
     //
+    const author = await db.getAuthorById(id);
     // 3. If author not found, return 404
     //
+    if (!author) {
+      return res.status(404).json({ error: "Author not found" });
+    }
     // 4. If author is the sole author of any papers, return 400:
     //    {
     //      "error": "Constraint Error",
     //      "message": "Cannot delete author: they are the only author of one or more papers"
     //    }
     //
+    for (const paper of author.papers) {
+      if (paper.authors.length === 1) {
+        return res.status(400).json({
+          error: "Constraint Error",
+          message: "Cannot delete author: they are the only author of one or more papers"
+        });
+      }
+    }
     // 5. Send no content response with status 204:
     //    res.status(204).end();
+    await db.deleteAuthor(id);
+    res.status(204).end();
   } catch (error) {
     next(error);
   }

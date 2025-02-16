@@ -27,6 +27,31 @@ const validatePaperInput = (paper) => {
   //   "At least one author is required"
   // ]
   const errors = [];
+  if (!paper.title || typeof paper.title !== 'string' || paper.title.trim() === '') {
+    errors.push("Title is required");
+  }
+  if (!paper.publishedIn || typeof paper.publishedIn !== 'string' || paper.publishedIn.trim() === '') {
+    errors.push("Published venue is required");
+  }
+  if (
+    paper.year === undefined ||
+    paper.year === null ||
+    typeof paper.year !== 'number' ||
+    !Number.isInteger(paper.year) ||
+    paper.year <= 1900
+  ) {
+    errors.push("Valid year after 1900 is required");
+  }
+  if (!Array.isArray(paper.authors) || paper.authors.length === 0) {
+    errors.push("At least one author is required");
+  } else {
+    paper.authors.forEach((author, index) => {
+      const authorErrors = validateAuthorInput(author);
+      if (authorErrors.length > 0) {
+        errors.push(`Author ${index + 1}: ${authorErrors.join(', ')}`);
+      }
+    });
+  }
   return errors;
 };
 
@@ -46,6 +71,19 @@ const validateAuthorInput = (author) => {
   //   "Name is required"
   // ]
   const errors = [];
+  if (!author.name || typeof author.name !== 'string' || author.name.trim() === '') {
+    errors.push("Name is required");
+  }
+  if (author.email !== undefined && author.email !== null && typeof author.email !== 'string') {
+    errors.push("Email must be a string");
+  }
+  if (
+    author.affiliation !== undefined &&
+    author.affiliation !== null &&
+    typeof author.affiliation !== 'string'
+  ) {
+    errors.push("Affiliation must be a string");
+  }
   return errors;
 };
 
@@ -78,6 +116,59 @@ const validatePaperQueryParams = (req, res, next) => {
   // }
   //
   // If valid, call next()
+  const { year, publishedIn, author, limit, offset } = req.query;
+  const errors = [];
+
+  if (year !== undefined) {
+    const parsedYear = parseInt(year, 10);
+    if (isNaN(parsedYear) || parsedYear <= 1900) {
+      errors.push("Year must be an integer greater than 1900");
+    } else {
+      req.query.year = parsedYear;
+    }
+  }
+
+  if (publishedIn !== undefined) {
+    if (typeof publishedIn !== 'string') {
+      errors.push("PublishedIn must be a string");
+    }
+  }
+
+  if (author !== undefined) {
+    if (typeof author !== 'string') {
+      errors.push("Author must be a string");
+    }
+  }
+
+  if (limit !== undefined) {
+    const parsedLimit = parseInt(limit, 10);
+    if (isNaN(parsedLimit) || parsedLimit <= 0 || parsedLimit > 100) {
+      errors.push("Limit must be a positive integer not greater than 100");
+    } else {
+      req.query.limit = parsedLimit;
+    }
+  } else {
+    req.query.limit = 10;
+  }
+
+  if (offset !== undefined) {
+    const parsedOffset = parseInt(offset, 10);
+    if (isNaN(parsedOffset) || parsedOffset < 0) {
+      errors.push("Offset must be a non-negative integer");
+    } else {
+      req.query.offset = parsedOffset;
+    }
+  } else {
+    req.query.offset = 0;
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({
+      error: "Validation Error",
+      message: "Invalid query parameter format"
+    });
+  }
+  next();
 };
 
 // Validate query parameters for authors
@@ -98,6 +189,49 @@ const validateAuthorQueryParams = (req, res, next) => {
   // }
   //
   // If valid, call next()
+  const { name, affiliation, limit, offset } = req.query;
+  const errors = [];
+
+  if (name !== undefined) {
+    if (typeof name !== 'string' || name.trim() === '') {
+      errors.push("Name filter must be a non-empty string");
+    }
+  }
+  if (affiliation !== undefined) {
+    if (typeof affiliation !== 'string' || affiliation.trim() === '') {
+      errors.push("Affiliation filter must be a non-empty string");
+    }
+  }
+
+  if (limit !== undefined) {
+    const parsedLimit = parseInt(limit, 10);
+    if (isNaN(parsedLimit) || parsedLimit <= 0 || parsedLimit > 100) {
+      errors.push("Limit must be a positive integer not greater than 100");
+    } else {
+      req.query.limit = parsedLimit;
+    }
+  } else {
+    req.query.limit = 10;
+  }
+
+  if (offset !== undefined) {
+    const parsedOffset = parseInt(offset, 10);
+    if (isNaN(parsedOffset) || parsedOffset < 0) {
+      errors.push("Offset must be a non-negative integer");
+    } else {
+      req.query.offset = parsedOffset;
+    }
+  } else {
+    req.query.offset = 0;
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({
+      error: "Validation Error",
+      message: "Invalid query parameter format"
+    });
+  }
+  next();
 };
 
 // Validate resource ID parameter
@@ -113,6 +247,16 @@ const validateResourceId = (req, res, next) => {
   // }
   //
   // If valid, call next()
+  const { id } = req.params;
+  const parsedId = parseInt(id, 10);
+  if (isNaN(parsedId) || parsedId <= 0) {
+    return res.status(400).json({
+      error: "Validation Error",
+      message: "Invalid ID format"
+    });
+  }
+  req.params.id = parsedId;
+  next();
 };
 
 // Error handler middleware

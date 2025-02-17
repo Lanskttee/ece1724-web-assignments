@@ -37,6 +37,8 @@ const validatePaperInput = (paper) => {
     errors.push("Published year is required");
   } else if (typeof paper.year !== 'number' || !Number.isInteger(paper.year) || paper.year <= 1900) {
     errors.push("Valid year after 1900 is required");
+  } else if ( paper.year >=2026) {
+    errors.push("Year cannot be in the future");
   }
   
   if (!Array.isArray(paper.authors) || paper.authors.length === 0) {
@@ -118,9 +120,13 @@ const validatePaperQueryParams = (req, res, next) => {
 
   if (year !== undefined) {
     const parsedYear = parseInt(year, 10);
-    if (isNaN(parsedYear) || parsedYear <= 1900) {
+    if (isNaN(parsedYear) || parsedYear <= 1900 ) {
       errors.push("Year must be an integer greater than 1900");
-    } else {
+    } 
+    else if (isNaN(parsedYear) || parsedYear >= 2026 ) {
+      errors.push("Year must be an integer less than 2026");
+    }
+    else {
       req.query.year = parsedYear;
     }
   }

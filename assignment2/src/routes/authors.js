@@ -158,18 +158,40 @@ router.delete("/:id", middleware.validateResourceId, async (req, res, next) => {
     //      "message": "Cannot delete author: they are the only author of one or more papers"
     //    }
     //
+    // console.log("Author Data:", author);
+    // console.log("Papers:", author.papers);
+
+    // for (const paper of author.papers) {
+    //   if (paper.authors.length === 1) {
+    //     return res.status(400).json({
+    //       error: "Constraint Error",
+    //       message: "Cannot delete author: they are the only author of one or more papers"
+    //     });
+    //   }
+    // }
+
     for (const paper of author.papers) {
-      if (paper.authors.length === 1) {
+      const paperRecord = await db.getPaperById(paper.id);
+      if (paperRecord.authors.length === 1) {
         return res.status(400).json({
           error: "Constraint Error",
           message: "Cannot delete author: they are the only author of one or more papers"
         });
       }
     }
+
+
+
+
+
     // 5. Send no content response with status 204:
     //    res.status(204).end();
     await db.deleteAuthor(id);
     res.status(204).end();
+
+
+
+    
   } catch (error) {
     next(error);
   }

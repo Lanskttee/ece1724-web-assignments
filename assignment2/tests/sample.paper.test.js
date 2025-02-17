@@ -204,4 +204,112 @@ describe("API Tests for Paper Routes", () => {
       expect(res.body.error).toBe("Paper not found");
     });
   });
+
+  describe("Additional API Tests for Paper Routes", () => {
+    // POST /api/papers - Additional cases
+    describe("POST /api/papers (Edge Cases & Input Validation)", () => {
+      it("should return 400 if title is missing", async () => {
+        const res = await request(app).post("/api/papers").send({
+          publishedIn: "ICSE 2024",
+          year: 2024,
+          authors: samplePaper.authors,
+        });
+  
+        expect(res.status).toBe(400);
+        expect(res.body.messages).toContain("Title is required");
+      });
+  
+      it("should return 400 if year is in the future", async () => {
+        const res = await request(app).post("/api/papers").send({
+          ...samplePaper,
+          year: new Date().getFullYear() + 10, // 未来10年
+        });
+  
+        expect(res.status).toBe(400);
+        expect(res.body.messages).toContain("Year cannot be in the future");
+      });
+  
+      it("should return 400 if authors list is empty", async () => {
+        const res = await request(app).post("/api/papers").send({
+          ...samplePaper,
+          authors: [],
+        });
+  
+        expect(res.status).toBe(400);
+        expect(res.body.messages).toContain("At least one author is required");
+      });
+    });
+  
+    // GET /api/papers - Additional cases
+    describe("GET /api/papers (Filtering & Edge Cases)", () => {
+      it("should return empty list if no paper matches filter", async () => {
+        const res = await request(app).get("/api/papers?year=1999");
+  
+        expect(res.status).toBe(200);
+        expect(res.body.papers).toBeInstanceOf(Array);
+        expect(res.body.papers.length).toBe(0);
+      });
+  
+      it("should return 400 if pagination parameters are invalid", async () => {
+        const res = await request(app).get("/api/papers?page=0&limit=-1");
+  
+        expect(res.status).toBe(400);
+        expect(res.body.error).toBe("Validation Error");
+      });
+  
+      it("should return papers filtered by author name", async () => {
+        const res = await request(app).get("/api/papers?author=John Doe");
+  
+        expect(res.status).toBe(200);
+        expect(res.body.papers.length).toBeGreaterThan(0);
+        res.body.papers.forEach((paper) => {
+          const authorNames = paper.authors.map((a) => a.name);
+          expect(authorNames).toContain("John Doe");
+        });
+      });
+    });
+  
+    // GET /api/papers/:id - Invalid IDs
+    describe("GET /api/papers/:id (Error Scenarios)", () => {
+      it("should return 400 if ID is not a valid number", async () => {
+        const res = await request(app).get("/api/papers/abcd");
+  
+        expect(res.status).toBe(400);
+        expect(res.body.error).toBe("Validation Error");
+      });
+    });
+  
+    // PUT /api/papers/:id - Additional cases
+    describe("PUT /api/papers/:id (Update Validation)", () => {
+      it("should return 400 if year is not a number", async () => {
+        const createRes = await request(app).post("/api/papers").send(samplePaper);
+        const res = await request(app)
+          .put(`/api/papers/${createRes.body.id}`)
+          .send({ ...samplePaper, year: "not-a-number" });
+  
+        expect(res.status).toBe(400);
+        expect(res.body.error).toBe("Validation Error");
+      });
+  
+      it("should return 404 if trying to update a non-existent paper", async () => {
+        const res = await request(app).put("/api/papers/999999").send(samplePaper);
+  
+        expect(res.status).toBe(404);
+        expect(res.body.error).toBe("Paper not found");
+      });
+    });
+  
+    // DELETE /api/papers/:id - Invalid ID case
+    describe("DELETE /api/papers/:id (Invalid ID)", () => {
+      it("should return 400 if paper ID is invalid", async () => {
+        const res = await request(app).delete("/api/papers/abcd");
+  
+        expect(res.status).toBe(400);
+        expect(res.body.error).toBe("Validation Error");
+      });
+    });
+  });
+  
+
+
 });

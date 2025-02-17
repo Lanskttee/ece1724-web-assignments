@@ -33,15 +33,12 @@ const validatePaperInput = (paper) => {
   if (!paper.publishedIn || typeof paper.publishedIn !== 'string' || paper.publishedIn.trim() === '') {
     errors.push("Published venue is required");
   }
-  if (
-    paper.year === undefined ||
-    paper.year === null ||
-    typeof paper.year !== 'number' ||
-    !Number.isInteger(paper.year) ||
-    paper.year <= 1900
-  ) {
+  if (paper.year === undefined || paper.year === null || paper.year === "") {
+    errors.push("Published year is required");
+  } else if (typeof paper.year !== 'number' || !Number.isInteger(paper.year) || paper.year <= 1900) {
     errors.push("Valid year after 1900 is required");
   }
+  
   if (!Array.isArray(paper.authors) || paper.authors.length === 0) {
     errors.push("At least one author is required");
   } else {

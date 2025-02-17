@@ -59,10 +59,15 @@ router.get("/:id", middleware.validateResourceId, async (req, res, next) => {
     const id = req.params.id;
     // 2. Call db.getPaperById
     //
+    const paper = await db.getPaperById(id);
     // 3. If paper not found, return 404
     //
+    if (!paper) {
+      return res.status(404).json({ error: "Paper not found" });
+    }
     // 4. Send JSON response with status 200:
     //    res.json(paper);
+    res.status(200).json(paper);
   } catch (error) {
     next(error);
   }

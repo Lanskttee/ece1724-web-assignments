@@ -28,7 +28,6 @@ const dbOperations = {
       // and prisma.paper.create() with { connect: [...] } to connect authors
       const authorConnections = [];
       for (const author of paperData.authors) {
-        // 查找时指定 orderBy 保证返回 id 最小的匹配记录
         const existingAuthor = await prisma.author.findFirst({
           where: {
             name: author.name,
@@ -101,7 +100,7 @@ const dbOperations = {
         };
       }
       if (filters.author) {
-        // filters.author 为数组时使用 AND 逻辑
+        
         const authorsFilter = Array.isArray(filters.author)
           ? filters.author
           : [filters.author];

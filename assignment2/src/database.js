@@ -226,9 +226,13 @@ const dbOperations = {
       //
       // Use await prisma.paper.delete()
       // Return nothing (undefined)
-      await prisma.paper.delete({
-        where: { id: Number(id) },
-      });
+      
+      const paper = await prisma.paper.findUnique({ where: { id } });
+      if (!paper) {
+        throw new Error("Paper not found");
+      }
+      await prisma.paper.delete({ where: { id } });
+      
     } catch (error) {
       throw error;
     }
@@ -381,3 +385,4 @@ const dbOperations = {
 module.exports = {
   ...dbOperations,
 };
+

@@ -24,8 +24,15 @@ router.get(
       if (affiliation !== undefined) {
         filters.affiliation = affiliation;
       }
-      filters.limit = limit !== undefined ? Number(limit) : 10;
-      filters.offset = offset !== undefined ? Number(offset) : 0;
+      
+      filters.limit = limit !== undefined && Number.isInteger(Number(limit)) && Number(limit) > 0
+        ? Math.min(Number(limit), 100)
+        : 10;
+
+      filters.offset = offset !== undefined && Number.isInteger(Number(offset)) && Number(offset) >= 0
+        ? Number(offset)
+        : 0;
+
       //
       // 2. Call db.getAllAuthors with filters
       //
@@ -56,7 +63,7 @@ router.get("/:id", middleware.validateResourceId, async (req, res, next) => {
     //
     // 1. Get author ID from req.params
     //
-    const id = req.params.id;
+    const id = parseInt(req.params.id, 10);
     // 2. Call db.getAuthorById
     //
     const author = await db.getAuthorById(id);
@@ -107,7 +114,7 @@ router.put("/:id", middleware.validateResourceId, async (req, res, next) => {
     //
     // 1. Get author ID from req.params
     //
-    const id = req.params.id;
+    const id = parseInt(req.params.id, 10);
     // 2. Validate request body using middleware.validateAuthorInput
     //
     const errors = middleware.validateAuthorInput(req.body);
@@ -143,13 +150,13 @@ router.delete("/:id", middleware.validateResourceId, async (req, res, next) => {
     //
     // 1. Get author ID from req.params
     //
-    const id = req.params.id;
+    const id = parseInt(req.params.id, 10);
     // 2. Call db.deleteAuthor
     //
-    const author = await db.getAuthorById(id);
+    const author = await db.deleteAuthor(id);
     // 3. If author not found, return 404
     //
-    if (!author) {
+    if (author === "AuthorNotFound"){
       return res.status(404).json({ error: "Author not found" });
     }
     // 4. If author is the sole author of any papers, return 400:
@@ -170,15 +177,15 @@ router.delete("/:id", middleware.validateResourceId, async (req, res, next) => {
     //   }
     // }
 
-    for (const paper of author.papers) {
-      const paperRecord = await db.getPaperById(paper.id);
-      if (paperRecord.authors.length === 1) {
-        return res.status(400).json({
-          error: "Constraint Error",
-          message: "Cannot delete author: they are the only author of one or more papers"
-        });
-      }
-    }
+    // for (const paper of author.papers) {
+    //   const paperRecord = await db.getPaperById(paper.id);
+    //   if (paperRecord.authors.length === 1) {
+    //     return res.status(400).json({
+    //       error: "Constraint Error",
+    //       message: "Cannot delete author: they are the only author of one or more papers"
+    //     });
+    //   }
+    // }
 
 
 
@@ -186,13 +193,20 @@ router.delete("/:id", middleware.validateResourceId, async (req, res, next) => {
 
     // 5. Send no content response with status 204:
     //    res.status(204).end();
-    await db.deleteAuthor(id);
+    
     res.status(204).end();
 
 
 
     
   } catch (error) {
+    if (error.name === "ConstraintError") {
+      return res.status(400).json({
+        error: "Constraint Error",
+        message:
+          "Cannot delete author: they are the only author of one or more papers",
+      });
+    }
     next(error);
   }
 });

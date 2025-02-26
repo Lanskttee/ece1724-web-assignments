@@ -44,6 +44,13 @@ const validatePaperInput = (paper) => {
   if (!Array.isArray(paper.authors) || paper.authors.length === 0) {
     errors.push("At least one author is required");
   } else {
+    const hasMissingAuthorName = paper.authors.some(
+      (author) => !author.name || typeof author.name !== "string" || author.name.trim() === ""
+    );
+    
+    if (hasMissingAuthorName) {
+      errors.push("Author name is required"); 
+    }
     paper.authors.forEach((author, index) => {
       const authorErrors = validateAuthorInput(author);
       if (authorErrors.length > 0) {
@@ -131,17 +138,20 @@ const validatePaperQueryParams = (req, res, next) => {
     }
   }
 
-  if (publishedIn !== undefined) {
-    if (typeof publishedIn !== 'string') {
-      errors.push("PublishedIn must be a string");
-    }
-  }
+  
 
   if (author !== undefined) {
-    if (typeof author !== 'string') {
-      errors.push("Author must be a string");
+    // if (typeof author !== "string" || author.trim() === "") {
+    //   errors.push("Author must be a string");
+    // }
+    let authors = Array.isArray(author) ? author : [author];
+    for (const authorName of authors) {
+      if (typeof authorName !== "string" || authorName.trim() === "") {
+        errors.push("Author must be a string");
+      }
     }
   }
+  
 
   if (limit !== undefined) {
     const parsedLimit = parseInt(limit, 10);
@@ -251,6 +261,12 @@ const validateResourceId = (req, res, next) => {
   //
   // If valid, call next()
   const { id } = req.params;
+  if (id.includes('.') || !/^\d+$/.test(id)) {
+    return res.status(400).json({
+      error: "Validation Error",
+      message: "Invalid ID format",
+    });
+  }
   const parsedId = parseInt(id, 10);
   if (isNaN(parsedId) || parsedId <= 0) {
     return res.status(400).json({

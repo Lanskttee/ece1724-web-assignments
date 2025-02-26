@@ -26,46 +26,46 @@ const dbOperations = {
       //
       // Hint: Use prisma.author.findFirst() to find existing authors
       // and prisma.paper.create() with { connect: [...] } to connect authors
-      const authorConnections = [];
-      for (const author of paperData.authors) {
-        const existingAuthor = await prisma.author.findFirst({
-          where: {
-            name: author.name,
-            email: author.email || null,
-            affiliation: author.affiliation || null,
-          },
-          orderBy: { id: "asc" }
-        });
-        let authorRecord;
-        if (existingAuthor) {
-          authorRecord = existingAuthor;
-        } else {
-          authorRecord = await prisma.author.create({
-            data: {
+      const authorRecords = await Promise.all(
+        paperData.authors.map(async (author) => {
+          let existingAuthor = await prisma.author.findFirst({
+            where: { 
               name: author.name,
               email: author.email || null,
               affiliation: author.affiliation || null,
-            },
+              },
+            orderBy: { id: "asc" } 
           });
-        }
-        authorConnections.push({ id: authorRecord.id });
-      }
-      const createdPaper = await prisma.paper.create({
+          if (!existingAuthor) {
+            existingAuthor = await prisma.author.create({
+              data: {
+                name: author.name,
+                email: author.email ?? null, 
+                affiliation: author.affiliation ?? null, 
+              }
+            });
+          }
+          return existingAuthor;
+        })
+      );
+    
+      
+      authorRecords.sort((a, b) => a.id - b.id);
+    
+      return await prisma.paper.create({
         data: {
           title: paperData.title,
           publishedIn: paperData.publishedIn,
           year: paperData.year,
           authors: {
-            connect: authorConnections,
+            connect: authorRecords.map((author) => ({ id: author.id })),
           },
         },
         include: {
-          authors: {
-            orderBy: { id: "asc" },
-          },
+          authors: true, // 返回作者信息
         },
       });
-      return createdPaper;
+      
     } catch (error) {
       throw error;
     }
@@ -104,13 +104,24 @@ const dbOperations = {
         const authorsFilter = Array.isArray(filters.author)
           ? filters.author
           : [filters.author];
-        where.AND = authorsFilter.map((authorName) => ({
-          authors: {
+        if (authorsFilter.length === 1) {
+          where.authors = {
             some: {
-              name: { contains: authorName, mode: "insensitive" },
+              name: { contains: authorsFilter[0], mode: "insensitive" }
+            }
+          };
+        } else {
+          where.AND = authorsFilter.map((authorName) => ({
+            authors: {
+              some: {
+                name: { contains: authorName, mode: "insensitive" },
+              },
             },
-          },
-        }));
+          }));
+        }
+        
+        
+          
       }
 
       const papers = await prisma.paper.findMany({
@@ -175,9 +186,16 @@ const dbOperations = {
       // Hint: Use prisma.author.findFirst() to find existing authors
       // and prisma.paper.update() with authors: { set: [], connect: [...] }
       // to replace author relationships
-      const authorConnections = [];
-      for (const author of paperData.authors) {
-        const existingAuthor = await prisma.author.findFirst({
+      const existingPaper = await prisma.paper.findUnique({
+        where: { id: parseInt(id, 10) },
+      });
+  
+      if (!existingPaper) {
+        return null; 
+      }
+      const authorRecords = await Promise.all(
+        paperData.authors.map(async (author) => {
+          let existingAuthor = await prisma.author.findFirst({
           where: {
             name: author.name,
             email: author.email || null,
@@ -197,8 +215,10 @@ const dbOperations = {
             },
           });
         }
-        authorConnections.push({ id: authorRecord.id });
-      }
+        // authorConnections.push({ id: authorRecord.id });
+        return existingAuthor;
+        })
+      );
       const updatedPaper = await prisma.paper.update({
         where: { id: Number(id) },
         data: {
@@ -206,7 +226,8 @@ const dbOperations = {
           publishedIn: paperData.publishedIn,
           year: paperData.year,
           authors: {
-            set: authorConnections,
+            set: [], 
+            connect: authorRecords.map((author) => ({ id: author.id })),
           },
         },
         include: { 
@@ -226,11 +247,11 @@ const dbOperations = {
       // Use await prisma.paper.delete()
       // Return nothing (undefined)
       
-      const paper = await prisma.paper.findUnique({ where: { id } });
+      const paper = await prisma.paper.findUnique({ where: { id: parseInt(id, 10) } });
       if (!paper) {
-        throw new Error("Paper not found");
+        return "PaperNotFound";
       }
-      await prisma.paper.delete({ where: { id } });
+      await prisma.paper.delete({ where: { id: parseInt(id, 10) } });
       
     } catch (error) {
       throw error;
@@ -357,20 +378,22 @@ const dbOperations = {
       // Use await prisma.author.delete()
       const author = await prisma.author.findUnique({
         where: { id: Number(id) },
-        include: { papers: true },
+        include: { papers: { include: { authors: true } } },
       });
       if (!author) {
-        throw new Error("Author not found");
+        return "AuthorNotFound";
       }
       // 检查每篇论文是否仅有该作者
-      for (const paper of author.papers) {
-        const paperRecord = await prisma.paper.findUnique({
-          where: { id: paper.id },
-          include: { authors: { orderBy: { id: "asc" } } },
-        });
-        if (paperRecord.authors.length === 1) {
-          throw new Error("Cannot delete author: they are the only author of one or more papers");
-        }
+      const hasSingleAuthoredPaper = author.papers.some(
+        (paper) => paper.authors.length === 1
+      );
+  
+      if (hasSingleAuthoredPaper) {
+        const error = new Error(
+          "Cannot delete author: they are the only author of one or more papers"
+        );
+        error.name = "ConstraintError";
+        throw error;
       }
       await prisma.author.delete({
         where: { id: Number(id) },

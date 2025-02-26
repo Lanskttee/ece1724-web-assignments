@@ -26,8 +26,8 @@ router.get("/", middleware.validatePaperQueryParams, async (req, res, next) => {
     if (author !== undefined) {
       filters.author = author;
     }
-    filters.limit = limit !== undefined ? Number(limit) : 10;
-    filters.offset = offset !== undefined ? Number(offset) : 0;
+    filters.limit = limit !== undefined ? Math.min(parseInt(limit, 10), 100) : 10;
+    filters.offset = offset !== undefined ? Math.max(parseInt(offset, 10), 0) : 0;
     // 2. Call db.getAllPapers with filters
     //
     const result = await db.getAllPapers(filters);
@@ -118,22 +118,24 @@ router.put("/:id", middleware.validateResourceId, async (req, res, next) => {
         error: "Validation Error",
         messages: errors,
       });
+      
     }
     // 4. Call db.updatePaper
     //
-    const existingPaper = await db.getPaperById(id);
+    const updatedPaper = await db.updatePaper(id,req.body);
     // 5. If paper not found, return 404
     //
-    if (!existingPaper) {
+    if (!updatedPaper) {
       return res.status(404).json({ error: "Paper not found" });
     }
-    const paper = await db.updatePaper(id, req.body);
+    // const paper = await db.updatePaper(id, req.body);
     // 6. Send JSON response with status 200:
     //    res.json(paper);
-    res.status(200).json(paper);
+    res.status(200).json(updatedPaper);
   } catch (error) {
     next(error);
   }
+
 });
 
 // DELETE /api/papers/:id
@@ -146,15 +148,15 @@ router.delete("/:id", middleware.validateResourceId, async (req, res, next) => {
     const id = req.params.id;
     // 2. Call db.deletePaper
     //
-    const existingPaper = await db.getPaperById(id);
+    const deletePaper = await db.deletePaper(id);
     // 3. If paper not found, return 404
     //
-    if (!existingPaper) {
+    if (deletePaper === "PaperNotFound") {
       return res.status(404).json({ error: "Paper not found" });
     }
     // 4. Send no content response with status 204:
     //    res.status(204).end();
-    await db.deletePaper(id);
+    
     res.status(204).end();
   } catch (error) {
     next(error);

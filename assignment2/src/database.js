@@ -210,13 +210,14 @@ const dbOperations = {
           authorRecord = await prisma.author.create({
             data: {
               name: author.name,
-              email: author.email || null,
-              affiliation: author.affiliation || null,
+              email: author.email ?? null,
+              affiliation: author.affiliation ?? null,
             },
           });
         }
         // authorConnections.push({ id: authorRecord.id });
-        return existingAuthor;
+        return authorRecord;
+        // return existingAuthor;
         })
       );
       const updatedPaper = await prisma.paper.update({

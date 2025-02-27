@@ -33,7 +33,7 @@ const validatePaperInput = (paper) => {
   if (!paper.publishedIn || typeof paper.publishedIn !== 'string' || paper.publishedIn.trim() === '') {
     errors.push("Published venue is required");
   }
-  if (paper.year === undefined || paper.year === null || paper.year === "") {
+  if (paper.year === undefined || paper.year === null || paper.year === ""|| (typeof paper.year === "string" && paper.year.trim() === "")) {
     errors.push("Published year is required");
   } else if (typeof paper.year !== 'number' || !Number.isInteger(paper.year) || paper.year <= 1900) {
     errors.push("Valid year after 1900 is required");
@@ -77,7 +77,7 @@ const validateAuthorInput = (author) => {
   //   "Name is required"
   // ]
   const errors = [];
-  if (!author.name || typeof author.name !== 'string' || author.name.trim() === '') {
+  if (!author.name ||author.name===null|| typeof author.name !== 'string' || author.name.trim() === '') {
     errors.push("Name is required");
   }
   if (author.email !== undefined && author.email !== null && typeof author.email !== 'string') {
@@ -126,8 +126,11 @@ const validatePaperQueryParams = (req, res, next) => {
   const errors = [];
 
   if (year !== undefined) {
-    const parsedYear = parseInt(year, 10);
-    if (isNaN(parsedYear) || parsedYear <= 1900 ) {
+    // const parsedYear = parseInt(year, 10);
+    const parsedYear = Number(year);
+
+
+    if (isNaN(parsedYear) || !Number.isInteger(parsedYear)|| parsedYear <= 1900 ) {
       errors.push("Year must be an integer greater than 1900");
     } 
     else if (isNaN(parsedYear) || parsedYear >= 2026 ) {
@@ -135,6 +138,15 @@ const validatePaperQueryParams = (req, res, next) => {
     }
     else {
       req.query.year = parsedYear;
+    }
+  }
+  
+
+  if (publishedIn !== undefined) {
+    if (typeof publishedIn !== "string" || publishedIn.trim() === "") {
+      errors.push("publishedIn must be a non-empty string");
+    } else {
+      req.query.publishedInRegex = { $regex: new RegExp(publishedIn, "i") }; 
     }
   }
 
@@ -154,8 +166,8 @@ const validatePaperQueryParams = (req, res, next) => {
   
 
   if (limit !== undefined) {
-    const parsedLimit = parseInt(limit, 10);
-    if (isNaN(parsedLimit) || parsedLimit <= 0 || parsedLimit > 100) {
+    const parsedLimit = Number(limit);
+    if (isNaN(parsedLimit) ||!Number.isInteger(parsedLimit) || parsedLimit <= 0 || parsedLimit > 100) {
       errors.push("Limit must be a positive integer not greater than 100");
     } else {
       req.query.limit = parsedLimit;
@@ -165,8 +177,8 @@ const validatePaperQueryParams = (req, res, next) => {
   }
 
   if (offset !== undefined) {
-    const parsedOffset = parseInt(offset, 10);
-    if (isNaN(parsedOffset) || parsedOffset < 0) {
+    const parsedOffset = Number(offset);
+    if (isNaN(parsedOffset) || !Number.isInteger(parsedOffset)|| parsedOffset < 0) {
       errors.push("Offset must be a non-negative integer");
     } else {
       req.query.offset = parsedOffset;
@@ -217,8 +229,8 @@ const validateAuthorQueryParams = (req, res, next) => {
   }
 
   if (limit !== undefined) {
-    const parsedLimit = parseInt(limit, 10);
-    if (isNaN(parsedLimit) || parsedLimit <= 0 || parsedLimit > 100) {
+    const parsedLimit = Number(limit);
+    if (isNaN(parsedLimit) ||!Number.isInteger(parsedLimit) || parsedLimit <= 0 || parsedLimit > 100) {
       errors.push("Limit must be a positive integer not greater than 100");
     } else {
       req.query.limit = parsedLimit;
@@ -228,8 +240,8 @@ const validateAuthorQueryParams = (req, res, next) => {
   }
 
   if (offset !== undefined) {
-    const parsedOffset = parseInt(offset, 10);
-    if (isNaN(parsedOffset) || parsedOffset < 0) {
+    const parsedOffset = Number(offset);
+    if (isNaN(parsedOffset) || !Number.isInteger(parsedOffset) ||parsedOffset < 0) {
       errors.push("Offset must be a non-negative integer");
     } else {
       req.query.offset = parsedOffset;
@@ -261,7 +273,7 @@ const validateResourceId = (req, res, next) => {
   //
   // If valid, call next()
   const { id } = req.params;
-  if (id.includes('.') || !/^\d+$/.test(id)) {
+  if (!/^\d+$/.test(id)) {
     return res.status(400).json({
       error: "Validation Error",
       message: "Invalid ID format",

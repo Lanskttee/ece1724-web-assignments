@@ -113,6 +113,7 @@ router.put("/:id", middleware.validateResourceId, async (req, res, next) => {
     const errors = middleware.validatePaperInput(req.body);
     // 3. If validation fails, return 400 with error messages
     //
+    // console.log(1);
     if (errors.length > 0) {
       return res.status(400).json({
         error: "Validation Error",

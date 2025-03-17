@@ -21,8 +21,57 @@ function Home() {
   //    but for simplicity in this assignment, we'll use page refresh.
   // 4. If request fails:
   //    - Set message to "Error creating paper"
+
   const handleCreatePaper = async (paperData) => {
     // Implementation here
+    try {
+     
+      const resAuthors = await fetch("/api/authors");
+      // const resAuthors = await fetch("http://localhost:3000/api/authors");
+      if (!resAuthors.ok) {
+        throw new Error("Error fetching authors");
+      }
+      const authorsData = await resAuthors.json();
+      const allAuthors = authorsData.authors || [];
+
+
+      const selectedAuthors = allAuthors.filter((author) =>
+        paperData.authorIds.includes(author.id)
+      );
+
+     
+      const createPayload = {
+        title: paperData.title,
+        publishedIn: paperData.publishedIn,
+        year: paperData.year,
+        authors: selectedAuthors.map((author) => ({
+          name: author.name,
+          email: author.email,
+          affiliation: author.affiliation,
+        })),
+      };
+
+     
+      const res = await fetch("/api/papers", {
+      // const res = await fetch("http://localhost:3000/api/papers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(createPayload),
+        // mode: 'no-cors',
+      });
+      if (!res.ok) {
+        throw new Error("Error creating paper");
+      }
+      setMessage("Paper created successfully");
+      // const delay = process.env.NODE_ENV === "test" ? 1000 : 3000;
+      
+      setTimeout(() => {
+        window.location.reload();
+      }, 3000);
+    } catch (err) {
+      setMessage("Error creating paper");
+    }
+    
   };
 
   return (

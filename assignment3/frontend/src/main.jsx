@@ -17,10 +17,23 @@ import "./styles/global.css";
 // TODO: Define your router configuration here
 // Example route configuration:
 // const router = createBrowserRouter([]);
+import Home from "./routes/Home";
+import EditPaper from "./routes/EditPaper";
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Home />,
+  },
+  {
+    path: "/edit/:id",
+    element: <EditPaper />,
+  },
+]);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     {/* TODO: Replace null with your Router instance */}
-    <RouterProvider router={null} />
+    <RouterProvider router={router} />
   </React.StrictMode>
 );

@@ -8,11 +8,28 @@ function AuthorSelect({ selectedAuthorIds, onChange }) {
   const [error, setError] = useState(null);
 
   // TODO: Fetch authors from the API when component mounts
+
   // 1. Use fetch() to GET /api/authors
   // 2. If successful: Set authors data and clear loading
   // 3. If fails (e.g., network error or server error): Set error to "Error loading authors", clear loading
   useEffect(() => {
     // Implementation here
+    // fetch("http://localhost:3000/api/authors")
+    fetch("/api/authors")
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Error loading authors");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        setAuthors(data.authors || []);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError("Error loading authors");
+        setLoading(false);
+      });
   }, []);
 
   // TODO: Handle selection changes and call the onChange prop
@@ -23,6 +40,10 @@ function AuthorSelect({ selectedAuthorIds, onChange }) {
   // - Pass the array to onChange
   const handleChange = (event) => {
     // Implementation here
+    const selectedValues = Array.from(event.target.selectedOptions).map((option) =>
+      Number(option.value)
+    );
+    onChange(selectedValues);
   };
 
   return (

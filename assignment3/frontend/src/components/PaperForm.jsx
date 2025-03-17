@@ -12,12 +12,14 @@ function PaperForm({ paper, onSubmit }) {
     title: paper?.title || "",
     publishedIn: paper?.publishedIn || "",
     year: paper?.year || new Date().getFullYear(),
+    // year: paper?.year || "",
     authorIds: paper?.authors?.map((author) => author.id) || [],
   });
   const [error, setError] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // console.log("Submitting paper:", formData);
 
     // TODO: Validate form data
     // Show appropriate error messages for:
@@ -27,8 +29,37 @@ function PaperForm({ paper, onSubmit }) {
     // - "Valid year after 1900 is required"
     // - "Please select at least one author"
     // Note: Display only the first error encountered and stop checking further
+    setError(null);
+    if (!formData.title.trim()) {
+      setError("Title is required");
+      return;
+    }
+    if (!formData.publishedIn.trim()) {
+      setError("Publication venue is required");
+      return;
+    }
+    if (!formData.year) {
+      setError("Publication year is required");
+      return;
+    }
+    if (isNaN(formData.year) || formData.year < 1901) {
+      setError("Valid year after 1900 is required");
+      return;
+    }
+    if (!formData.authorIds || formData.authorIds.length === 0) {
+      setError("Please select at least one author");
+      return;
+    }
 
     // TODO: Call onSubmit(formData) if validation passes
+    
+
+    try {
+      await onSubmit(formData);
+    } catch (err) {
+      setError(paper ? "Error updating paper" : "Error creating paper");
+    }
+
   };
 
   const handleChange = (e) => {

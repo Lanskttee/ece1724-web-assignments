@@ -23,6 +23,28 @@ function EditPaper() {
   //    - Clear loading
   //    - Return to prevent unnecessary res.json()
   useEffect(() => {
+    const fetchPaper = async () => {
+      try {
+        const res = await fetch(`/api/papers/${id}`);
+        // const res = await fetch(`http://localhost:3000/api/papers/${id}`);
+        if (res.status === 404) {
+          setPaper(null);
+          setLoading(false);
+          return;
+        }
+        if (!res.ok) {
+          throw new Error("Error loading paper");
+        }
+        const data = await res.json();
+        setPaper(data);
+        setLoading(false);
+      } catch (err) {
+        setError("Error loading paper");
+        setLoading(false);
+      }
+    };
+
+    fetchPaper();
     // Implementation here
   }, [id]);
 
@@ -40,11 +62,41 @@ function EditPaper() {
   // };
   // 2. If successful:
   //    - Set message to "Paper updated successfully"
-  //    - Navigate to home page "/"
+  //    - After a 3-second delay, navigate to home page "/"
   // 3. If fails: Set message to "Error updating paper"
   // Note that authors are displayed but cannot be edited (for simplicity)
   const handleUpdatePaper = async (paperData) => {
     // Implementation here
+    try {
+      const updatedPaper = {
+        title: paperData.title,
+        publishedIn: paperData.publishedIn,
+        year: paperData.year,
+        // Preserve authors from fetched paper data (authors are not editable)
+        authors: paper.authors.map((author) => ({
+          name: author.name,
+          email: author.email,
+          affiliation: author.affiliation,
+        })),
+      };
+
+      const res = await fetch(`/api/papers/${id}`, {
+      // const res = await fetch(`http://localhost:3000/api/papers/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedPaper),
+      });
+      if (!res.ok) {
+        throw new Error("Error updating paper");
+      }
+      setMessage("Paper updated successfully");
+      // 延迟 3 秒后导航到首页
+      setTimeout(() => {
+        navigate("/");
+      }, 3000);
+    } catch (err) {
+      setMessage("Error updating paper");
+    }
   };
 
   if (loading) return <div>Loading paper details...</div>;

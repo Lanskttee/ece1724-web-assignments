@@ -15,9 +15,31 @@ function PaperList() {
   // 1. Use fetch() to GET /api/papers
   // 2. If successful: Set papers data and clear loading
   // 3. If fails (e.g., network error or server error): Set error to "Error loading papers", clear loading
+
   useEffect(() => {
     // Implementation here
+    // fetch("http://localhost:3000/api/papers")
+    fetch("/api/papers")
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Error loading papers");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        
+        setPapers(data.papers || []);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError("Error loading papers");
+        setLoading(false);
+        // setPapers([]);
+        // setLoading(false);
+      });
+    
   }, []);
+  // console.log(papers);
 
   const handleDelete = async (paperId, paperTitle) => {
     // TODO: Implement delete functionality
@@ -32,11 +54,36 @@ function PaperList() {
     //    - Set message to "Error deleting paper"
     // 4. If user clicks "Cancel":
     //    - Do nothing (dialog will close automatically)
+    if (confirm(`Are you sure you want to delete "${paperTitle}"?`)) {
+      try {
+        const res = await fetch(`/api/papers/${paperId}`, {
+          //发现绝对路径有cors错误
+          // const res = await fetch(`http://localhost:3000/api/papers/${paperId}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) {
+          setMessage("Error deleting paper");
+        } else {
+          // 移除删除的论文
+          setPapers((prevPapers) =>
+            prevPapers.filter((paper) => paper.id !== paperId)
+          );
+          setMessage("Paper deleted successfully");
+
+          // 3s
+          setTimeout(() => {
+            setMessage(null);
+          }, 3000);
+        }
+      } catch (error) {
+        setMessage("Error deleting paper");
+      }
+    }
   };
 
   if (loading) return <div>Loading papers...</div>;
   if (error) return <div>Error loading papers</div>;
-  if (papers.length === 0) return <div>No papers found</div>;
+  if (!papers || papers.length === 0) return <div>No papers found</div>;
 
   return (
     <div className={styles.container}>

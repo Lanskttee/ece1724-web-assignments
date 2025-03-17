@@ -133,7 +133,7 @@ const validatePaperQueryParams = (req, res, next) => {
     if (isNaN(parsedYear) || !Number.isInteger(parsedYear)|| parsedYear <= 1900 ) {
       errors.push("Year must be an integer greater than 1900");
     } 
-    else if (isNaN(parsedYear) || parsedYear > 2027 ) {
+    else if (isNaN(parsedYear) || parsedYear > 2026 ) {
       errors.push("Year must be an integer less than 2026");
     }
     else {

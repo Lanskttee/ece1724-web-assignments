@@ -15,31 +15,29 @@ function PaperList() {
   // 1. Use fetch() to GET /api/papers
   // 2. If successful: Set papers data and clear loading
   // 3. If fails (e.g., network error or server error): Set error to "Error loading papers", clear loading
-
   useEffect(() => {
     // Implementation here
-    // fetch("http://localhost:3000/api/papers")
-    fetch("/api/papers")
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("Error loading papers");
+    const fetchPapers = async () => {
+      try {
+        const response = await fetch("/api/papers");
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch papers");
         }
-        return res.json();
-      })
-      .then((data) => {
-        
-        setPapers(data.papers || []);
-        setLoading(false);
-      })
-      .catch(() => {
+
+        const papersData = await response.json();
+        setPapers(Array.isArray(papersData) ? papersData : []);
+      } catch (error) {
+        console.error('Error fetching papers:', error);
+        setPapers([]);
         setError("Error loading papers");
+      } finally {
         setLoading(false);
-        // setPapers([]);
-        // setLoading(false);
-      });
-    
+      }
+    };
+
+    fetchPapers();
   }, []);
-  // console.log(papers);
 
   const handleDelete = async (paperId, paperTitle) => {
     // TODO: Implement delete functionality
@@ -56,50 +54,54 @@ function PaperList() {
     //    - Do nothing (dialog will close automatically)
     if (confirm(`Are you sure you want to delete "${paperTitle}"?`)) {
       try {
-        const res = await fetch(`/api/papers/${paperId}`, {
-          //发现绝对路径有cors错误
-          // const res = await fetch(`http://localhost:3000/api/papers/${paperId}`, {
-          method: "DELETE",
+        const response = await fetch(`/api/papers/${paperId}`, {
+          method: 'DELETE',
         });
-        if (!res.ok) {
-          setMessage("Error deleting paper");
-        } else {
-          // 移除删除的论文
-          setPapers((prevPapers) =>
-            prevPapers.filter((paper) => paper.id !== paperId)
-          );
-          setMessage("Paper deleted successfully");
-
-          
+        
+        if (!response.ok) {
+          throw new Error('Failed to delete paper');
         }
+
+        // Remove the paper from the list immediately
+        setPapers((prevPapers) => prevPapers.filter((paper) => paper.id !== paperId));
+        
+        // Show success message
+        setMessage("Paper deleted successfully");
+        
+        // Clear the message after 3 seconds
+        setTimeout(() => {
+          setMessage(null);
+        }, 3000);
       } catch (error) {
+        console.error('Error deleting paper:', error);
         setMessage("Error deleting paper");
       }
     }
   };
 
+  
   if (loading) return <div>Loading papers...</div>;
   if (error) return <div>Error loading papers</div>;
-  if (!papers || papers.length === 0) return <div>No papers found</div>;
+  if (papers.length === 0) return <div>No papers found</div>;
 
   return (
     <div className={styles.container}>
       {message && <div>{message}</div>}
-      {papers.map((paper) => (
-        <div key={paper.id} className={styles.paper}>
-          <h3 className={styles.paperTitle}>{paper.title}</h3>
-          <p>
-            Published in {paper.publishedIn}, {paper.year}
-          </p>
-          <p>
-            Authors: {paper.authors.map((author) => author.name).join(", ")}
-          </p>
-          <button onClick={() => navigate(`/edit/${paper.id}`)}>Edit</button>
-          <button onClick={() => handleDelete(paper.id, paper.title)}>
-            Delete
-          </button>
-        </div>
-      ))}
+      {papers.length > 0 ? (
+        papers.map((paper) => (
+          <div key={paper.id} className={styles.paper}>
+            <h3 className={styles.paperTitle}>{paper.title}</h3>
+            <p>Published in {paper.publishedIn}, {paper.year}</p>
+            <p>
+              Authors: {paper.authors?.map((author) => author.name).join(", ") || "Unknown"}
+            </p>
+            <button onClick={() => navigate(`/edit/${paper.id}`)}>Edit</button>
+            <button onClick={() => handleDelete(paper.id, paper.title)}>Delete</button>
+          </div>
+        ))
+      ) : (
+        <div>No papers found</div>
+      )}
     </div>
   );
 }

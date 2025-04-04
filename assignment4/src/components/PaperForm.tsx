@@ -11,6 +11,7 @@ interface PaperFormProps {
 export function PaperForm({ action, authors }: PaperFormProps) {
   return (
     <form action={action} className="space-y-4">
+    {/* <form action={action} className="space-y-4" noValidate> */}
       <div>
         <label htmlFor="title" className="block text-sm font-medium">
           Title
@@ -21,7 +22,6 @@ export function PaperForm({ action, authors }: PaperFormProps) {
           id="title"
           name="title"
           className="border p-2 w-full"
-          required
         />
       </div>
       <div>
@@ -34,7 +34,6 @@ export function PaperForm({ action, authors }: PaperFormProps) {
           id="publishedIn"
           name="publishedIn"
           className="border p-2 w-full"
-          required
         />
       </div>
       <div>
@@ -48,7 +47,6 @@ export function PaperForm({ action, authors }: PaperFormProps) {
           name="year"
           className="border p-2 w-full"
           min="1901"
-          required
         />
       </div>
       <div>
@@ -69,7 +67,6 @@ export function PaperForm({ action, authors }: PaperFormProps) {
           id="authorIds"
           className="border p-2 w-full"
           data-testid="author-dropdown"
-          required
         >
           {authors.length === 0 ? (
             <option disabled>No authors available</option>

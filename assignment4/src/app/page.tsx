@@ -17,7 +17,7 @@ async function getPapers(): Promise<{
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
     const res = await fetch(`${baseUrl}/api/papers`, { cache: "no-store" });
 
-    console.log("API response:", res);
+    // console.log("API response:", res);
 
 
     if (!res.ok) {
@@ -25,7 +25,7 @@ async function getPapers(): Promise<{
     }
     const papers = await res.json();
 
-    console.log("Fetched papers:", papers);
+    // console.log("Fetched papers:", papers);
 
 
     return { papers, error: null };
@@ -38,7 +38,7 @@ async function getPapers(): Promise<{
 async function PapersSection() {
   const { papers, error } = await getPapers();
   // TODO: Render papers or an error message based on getPapers() result
-  console.error(error); 
+  // console.error(error); 
   if (error) {
     return (
       <p data-testid="papers-error" className="text-sm">

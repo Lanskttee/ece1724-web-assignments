@@ -44,8 +44,8 @@ export default function CreateAuthor() {
             id="name"
             name="name"
             type="text"
-            required
-            className="w-full p-2 border rounded"
+
+            className="border p-2 w-full"
           />
         </div>
         <div>
@@ -57,7 +57,7 @@ export default function CreateAuthor() {
             id="email"
             name="email"
             type="email"
-            className="w-full p-2 border rounded"
+            className="border p-2 w-full"
           />
         </div>
         <div>
@@ -69,7 +69,7 @@ export default function CreateAuthor() {
             id="affiliation"
             name="affiliation"
             type="text"
-            className="w-full p-2 border rounded"
+            className="border p-2 w-full"
           />
         </div>
         <Button
@@ -81,7 +81,7 @@ export default function CreateAuthor() {
         </Button>
         {/* TODO: Display status message here */}
         {message && (
-          <p data-testid="status-message" className="text-sm text-red-500">
+          <p data-testid="status-message" className="text-sm">
             {message}
           </p>
         )}

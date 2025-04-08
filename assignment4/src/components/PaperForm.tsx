@@ -68,7 +68,7 @@ export function PaperForm({ action, authors }: PaperFormProps) {
           className="border p-2 w-full"
           data-testid="author-dropdown"
         >
-          {authors.length === 0 ? (
+          {!Array.isArray(authors) ||authors.length === 0 ? (
             <option disabled>No authors available</option>
           ) : (
             authors.map((author) => (
